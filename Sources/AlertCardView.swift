@@ -310,6 +310,18 @@ class AlertCardView: NSView, WKNavigationDelegate {
 
     // MARK: - WebView Delegate
 
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        // 如果是链接点击，在默认浏览器中打开
+        if navigationAction.navigationType == .linkActivated {
+            if let url = navigationAction.request.url {
+                NSWorkspace.shared.open(url)
+                decisionHandler(.cancel)
+                return
+            }
+        }
+        decisionHandler(.allow)
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         webView.evaluateJavaScript("document.getElementById('content').scrollHeight") { [weak self] result, error in
             guard let self = self, let actualHeight = result as? CGFloat else { return }
