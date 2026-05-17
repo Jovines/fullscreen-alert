@@ -3,6 +3,13 @@ import Foundation
 struct Config: Codable {
     var disabled: Bool = false
 
+    // 布局覆盖项（未设置时使用 Constants 默认值）
+    var cardWidth: CGFloat?
+    var screenMargin: CGFloat?
+    var cardSpacing: CGFloat?
+    var daemonIdleTimeout: TimeInterval?
+    var maxTableColumnWidth: CGFloat?
+
     static let configDir = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".config/fullscreen-alert")
     static let configPath = configDir.appendingPathComponent("config.json")

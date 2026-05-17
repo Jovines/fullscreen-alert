@@ -75,9 +75,12 @@ class AlertManager: NSObject {
         window?.ignoresMouseEvents = false
 
         let alertInfo = AlertInfo(request: request)
+        let config = Config.load()
+        let screenMargin = config.screenMargin ?? Constants.screenMargin
+        let maxCardWidth = config.cardWidth ?? Constants.cardWidth
         let cardWidth = min(
-            (NSScreen.main?.frame.width ?? 1000) - Constants.screenMargin * 2,
-            Constants.cardWidth
+            (NSScreen.main?.frame.width ?? 1000) - screenMargin * 2,
+            maxCardWidth
         )
         print("Card width: \(cardWidth)")
 
@@ -194,11 +197,11 @@ class AlertManager: NSObject {
         var total: CGFloat = 0
         for cardId in alertOrder {
             if let card = cards[cardId] {
-                total += card.cardHeight + Constants.cardSpacing
+                total += card.cardHeight + (Config.load().cardSpacing ?? Constants.cardSpacing)
             }
         }
         if total > 0 {
-            total -= Constants.cardSpacing  // 移除最后一个间距
+            total -= (Config.load().cardSpacing ?? Constants.cardSpacing)  // 移除最后一个间距
         }
         return total
     }

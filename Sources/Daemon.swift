@@ -202,7 +202,8 @@ class Daemon {
 
     private func resetIdleTimer() {
         idleTimer?.invalidate()
-        idleTimer = Timer.scheduledTimer(withTimeInterval: Constants.daemonIdleTimeout, repeats: false) { [weak self] _ in
+        let timeout = Config.load().daemonIdleTimeout ?? Constants.daemonIdleTimeout
+        idleTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
             if self?.alertManager.hasAlerts() == false {
                 self?.stop()
             } else {

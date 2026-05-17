@@ -19,10 +19,19 @@ macOS 全屏提示工具，用于 CLI 工具完成时显示通知。
 
 ## 安装
 
+一键安装（含 Hook 配置）：
+
+```bash
+bash install.sh
+```
+
+或手动安装：
+
 ```bash
 cd ~/Developer/fullscreen-alert
 swift build -c release
 cp .build/release/fullscreen-alert /usr/local/bin/
+codesign --force --sign - /usr/local/bin/fullscreen-alert
 ```
 
 ## 用法
@@ -37,6 +46,13 @@ fullscreen-alert <标题> [消息] [选项]
 |------|------|
 | `--timeout <秒>` | 自动关闭超时时间 |
 | `--sound <名称>` | 提示音（默认: Purr） |
+
+### 管理命令
+
+| 命令 | 说明 |
+|------|------|
+| `disable` | 临时禁用全屏提示（hook 调用静默跳过） |
+| `enable` | 重新启用全屏提示 |
 | `--list` | 列出所有活跃通知 |
 | `--close-all` | 关闭所有通知 |
 
@@ -60,6 +76,10 @@ fullscreen-alert "完成" "任务已完成" --sound Pop
 
 # 自定义音频文件
 fullscreen-alert "完成" "任务已完成" --sound ~/alert.wav
+
+# 临时禁用/启用
+fullscreen-alert disable
+fullscreen-alert enable
 
 # 列出所有通知
 fullscreen-alert --list
@@ -122,8 +142,11 @@ fullscreen-alert/
 │   ├── AlertCardView.swift  # 单个通知卡片
 │   ├── Models.swift         # 数据模型
 │   ├── Constants.swift      # 常量定义
+│   ├── Config.swift         # 运行时配置文件读写
 │   └── HTMLGenerator.swift  # HTML 生成
 ├── Package.swift            # Swift 包配置
+├── DESIGN.md                # 设计规范与色彩体系
+├── install.sh               # 一键安装脚本
 └── README.md                # 说明文档
 ```
 
@@ -132,7 +155,8 @@ fullscreen-alert/
 | 文件 | 路径 |
 |------|------|
 | Hook 脚本 | `~/.claude/hooks/stop-hook.sh` |
-| 配置文件 | `~/.claude/settings.json` |
+| Claude Code 配置 | `~/.claude/settings.json` |
+| 运行时配置 | `~/.config/fullscreen-alert/config.json` |
 | 可执行文件 | `/usr/local/bin/fullscreen-alert` |
 | Socket 文件 | `/tmp/fullscreen-alert.sock` |
 | PID 文件 | `/tmp/fullscreen-alert.pid` |
@@ -149,7 +173,33 @@ fullscreen-alert/
 
 ## 自定义
 
-### 修改配置
+### 运行时配置
+
+`~/.config/fullscreen-alert/config.json`，所有字段可选，未设置的项使用内置默认值：
+
+```json
+{
+  "disabled": false,
+  "cardWidth": 930,
+  "screenMargin": 50,
+  "cardSpacing": 20,
+  "daemonIdleTimeout": 300,
+  "maxTableColumnWidth": 450
+}
+```
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `disabled` | bool | `false` | 设为 `true` 后全屏提示静默跳过 |
+| `cardWidth` | number | `930` | 卡片最大宽度 |
+| `screenMargin` | number | `50` | 卡片与屏幕边缘最小间距 |
+| `cardSpacing` | number | `20` | 多卡片堆叠间距 |
+| `daemonIdleTimeout` | number | `300` | 守护进程空闲退出时间（秒） |
+| `maxTableColumnWidth` | number | `450` | 表格每列最大宽度 |
+
+修改后即时生效，无需重启守护进程。
+
+### 修改布局常量
 
 编辑 `Sources/Constants.swift`：
 
@@ -161,7 +211,7 @@ static let maxTableColumnWidth: CGFloat = 450  // 表格列最大宽度
 static let daemonIdleTimeout: TimeInterval = 300  // 守护进程空闲超时
 ```
 
-修改后需要重新编译。
+修改后需要重新编译。配色设计见 [DESIGN.md](DESIGN.md)。
 
 ## 开发流程
 

@@ -106,7 +106,7 @@ func generateHTMLPage(markdown: String) -> String {
             // 表格列宽调整
             function adjustTableColumns() {
                 var tables = document.querySelectorAll('table');
-                var maxColWidth = \(Int(Constants.maxTableColumnWidth));
+                var maxColWidth = \(Int(Config.load().maxTableColumnWidth ?? Constants.maxTableColumnWidth));
 
                 tables.forEach(function(table) {
                     var rows = table.querySelectorAll('tr');
