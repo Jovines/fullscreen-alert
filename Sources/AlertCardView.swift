@@ -174,8 +174,15 @@ class AlertCardView: NSView, WKNavigationDelegate {
         bgView.layer?.cornerRadius = 16
         addSubview(bgView)
 
+        // 深色遮罩层 — 压暗磨砂透光，保证白色文字在亮背景下的可读性
+        let darkOverlay = NSView(frame: bounds)
+        darkOverlay.wantsLayer = true
+        darkOverlay.layer?.backgroundColor = NSColor(red: 0.04, green: 0.04, blue: 0.06, alpha: 0.75).cgColor
+        darkOverlay.layer?.cornerRadius = 16
+        addSubview(darkOverlay)
+
         // 卡片样式
-        layer?.backgroundColor = NSColor(red: 0.08, green: 0.08, blue: 0.09, alpha: 0.85).cgColor
+        layer?.backgroundColor = NSColor(red: 0.08, green: 0.08, blue: 0.09, alpha: 0.95).cgColor
         layer?.cornerRadius = 16
         layer?.borderWidth = 1
         layer?.borderColor = NSColor.white.withAlphaComponent(0.12).cgColor

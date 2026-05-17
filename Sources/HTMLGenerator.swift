@@ -16,6 +16,8 @@ func generateHTMLPage(markdown: String) -> String {
     <head>
         <meta charset="UTF-8">
         <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             html, body { margin: 0; padding: 0; }
@@ -49,13 +51,14 @@ func generateHTMLPage(markdown: String) -> String {
                 border-radius: 3px;
             }
             pre {
-                background: rgba(255, 255, 255, 0.1);
-                padding: 8px;
+                background: rgba(30, 30, 30, 0.9);
+                padding: 10px;
                 border-radius: 6px;
                 overflow-x: auto;
                 margin: 6px 0;
             }
             pre code { background: none; padding: 0; }
+            .hljs { background: transparent !important; }
             strong, b { font-weight: 700; }
             em, i { font-style: italic; }
             a { color: #5EB5F7; text-decoration: none; }
@@ -90,6 +93,11 @@ func generateHTMLPage(markdown: String) -> String {
             var markdown = "\(escapedMarkdown)";
             var html = marked.parse(markdown);
             document.getElementById('content').innerHTML = html;
+
+            // 代码高亮
+            document.querySelectorAll('pre code').forEach(function(block) {
+                hljs.highlightElement(block);
+            });
 
             // 表格列宽调整
             function adjustTableColumns() {
