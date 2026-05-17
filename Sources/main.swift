@@ -123,6 +123,10 @@ if args.count < 2 || args.contains("--help") || args.contains("-h") {
                          静音: none
                          文件: /path/to/sound.wav
 
+    管理命令:
+      disable            临时禁用全屏提示
+      enable             重新启用全屏提示
+
     守护进程命令:
       --daemon           作为守护进程运行
       --list             列出所有通知
@@ -131,9 +135,28 @@ if args.count < 2 || args.contains("--help") || args.contains("-h") {
     示例:
       fullscreen-alert "完成" "任务已完成"
       fullscreen-alert "完成" "任务已完成" --sound Pop
+      fullscreen-alert disable
+      fullscreen-alert enable
       fullscreen-alert --list
       fullscreen-alert --close-all
     """)
+    exit(0)
+}
+
+// 禁用/启用命令
+if args.count == 2 && args[1] == "disable" {
+    var config = Config.load()
+    config.disabled = true
+    config.save()
+    print("fullscreen-alert 已禁用")
+    exit(0)
+}
+
+if args.count == 2 && args[1] == "enable" {
+    var config = Config.load()
+    config.disabled = false
+    config.save()
+    print("fullscreen-alert 已启用")
     exit(0)
 }
 
@@ -160,7 +183,10 @@ if args.contains("--close-all") {
     exit(0)
 }
 
-// 正常的通知请求
+// 正常的通知请求 — 先检查是否已禁用
+let config = Config.load()
+guard !config.disabled else { exit(0) }
+
 let title = args[1]
 var message = ""
 var timeout: TimeInterval = 0

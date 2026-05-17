@@ -96,12 +96,13 @@ class AlertCardView: NSView, WKNavigationDelegate {
         fflush(stdout)
 
         isBorderHighlighted = active
+        // Ghostty white #C5C8C6
         if active {
             layer?.borderWidth = 1.5
-            layer?.borderColor = NSColor.white.withAlphaComponent(0.4).cgColor
+            layer?.borderColor = NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.35).cgColor
         } else {
             layer?.borderWidth = 1
-            layer?.borderColor = NSColor.white.withAlphaComponent(0.12).cgColor
+            layer?.borderColor = NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.1).cgColor
         }
     }
 
@@ -123,7 +124,7 @@ class AlertCardView: NSView, WKNavigationDelegate {
             paragraphStyle.lineBreakMode = .byWordWrapping
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: 14, weight: .regular),
-                .foregroundColor: NSColor.white.withAlphaComponent(0.6),
+                .foregroundColor: NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.7),  // Ghostty white
                 .paragraphStyle: paragraphStyle
             ]
             let attrString = NSAttributedString(string: prompt, attributes: attrs)
@@ -174,18 +175,20 @@ class AlertCardView: NSView, WKNavigationDelegate {
         bgView.layer?.cornerRadius = 16
         addSubview(bgView)
 
-        // 深色遮罩层 — 压暗磨砂透光，保证白色文字在亮背景下的可读性
+        // 深色遮罩层 — 压暗磨砂透光，保证文字在亮背景下的可读性
+        // Ghostty black #1D1F21: 带蓝灰调的深色，比纯黑更柔和自然
         let darkOverlay = NSView(frame: bounds)
         darkOverlay.wantsLayer = true
-        darkOverlay.layer?.backgroundColor = NSColor(red: 0.04, green: 0.04, blue: 0.06, alpha: 0.75).cgColor
+        darkOverlay.layer?.backgroundColor = NSColor(red: 0.114, green: 0.122, blue: 0.129, alpha: 0.65).cgColor
         darkOverlay.layer?.cornerRadius = 16
         addSubview(darkOverlay)
 
         // 卡片样式
-        layer?.backgroundColor = NSColor(red: 0.08, green: 0.08, blue: 0.09, alpha: 0.95).cgColor
+        layer?.backgroundColor = NSColor(red: 0.114, green: 0.122, blue: 0.129, alpha: 0.95).cgColor
         layer?.cornerRadius = 16
         layer?.borderWidth = 1
-        layer?.borderColor = NSColor.white.withAlphaComponent(0.12).cgColor
+        // Ghostty white #C5C8C6
+        layer?.borderColor = NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.1).cgColor
         layer?.shadowColor = NSColor.black.withAlphaComponent(0.5).cgColor
         layer?.shadowOffset = CGSize(width: 0, height: 8)
         layer?.shadowRadius = 24
@@ -197,7 +200,8 @@ class AlertCardView: NSView, WKNavigationDelegate {
         // 标题
         let titleField = NSTextField(labelWithString: alertInfo.request.title)
         titleField.font = NSFont.systemFont(ofSize: 13, weight: .medium)
-        titleField.textColor = NSColor.white.withAlphaComponent(0.5)
+        // Ghostty white #C5C8C6
+        titleField.textColor = NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.55)
         titleField.alignment = NSTextAlignment.center
         titleField.sizeToFit()
         titleField.frame = NSRect(
@@ -221,7 +225,8 @@ class AlertCardView: NSView, WKNavigationDelegate {
                 height: promptHeight
             ))
             accentLine.wantsLayer = true
-            accentLine.layer?.backgroundColor = NSColor.systemBlue.withAlphaComponent(0.6).cgColor
+            // Ghostty blue #81A2BE
+            accentLine.layer?.backgroundColor = NSColor(red: 0.506, green: 0.635, blue: 0.745, alpha: 0.7).cgColor
             accentLine.layer?.cornerRadius = 1.5
             addSubview(accentLine)
 
@@ -232,7 +237,7 @@ class AlertCardView: NSView, WKNavigationDelegate {
             paragraphStyle.lineBreakMode = .byWordWrapping
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: 14, weight: .regular),
-                .foregroundColor: NSColor.white.withAlphaComponent(0.6),
+                .foregroundColor: NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.7),  // Ghostty white
                 .paragraphStyle: paragraphStyle
             ]
             let attrString = NSAttributedString(string: prompt, attributes: attrs)
@@ -279,7 +284,8 @@ class AlertCardView: NSView, WKNavigationDelegate {
                 let lineY = currentY - Constants.innerSpacing - CGFloat(index) * Constants.metaLineHeight
                 let lineField = NSTextField(labelWithString: line)
                 lineField.font = NSFont.systemFont(ofSize: 12, weight: .medium)
-                lineField.textColor = NSColor.white.withAlphaComponent(0.5)
+                // Ghostty white #C5C8C6
+                lineField.textColor = NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.5)
                 lineField.alignment = .left
                 lineField.sizeToFit()
                 lineField.frame = NSRect(
@@ -296,7 +302,8 @@ class AlertCardView: NSView, WKNavigationDelegate {
         // 底部提示
         let hintField = NSTextField(labelWithString: "鼠标移出 或 右键点击 关闭")
         hintField.font = NSFont.systemFont(ofSize: 11, weight: .light)
-        hintField.textColor = NSColor.white.withAlphaComponent(0.35)
+        // Ghostty bright_black #666666
+        hintField.textColor = NSColor(red: 0.4, green: 0.4, blue: 0.4, alpha: 0.6)
         hintField.alignment = .center
         hintField.sizeToFit()
         hintField.frame = NSRect(

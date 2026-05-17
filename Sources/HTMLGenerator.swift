@@ -25,7 +25,8 @@ func generateHTMLPage(markdown: String) -> String {
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 font-size: 15px;
                 line-height: 1.5;
-                color: #ffffff;
+                /* Ghostty white #C5C8C6 */
+                color: #C5C8C6;
                 background: transparent;
             }
             #content {
@@ -34,9 +35,9 @@ func generateHTMLPage(markdown: String) -> String {
                 padding-right: 8px;
             }
             #content::-webkit-scrollbar { width: 6px; }
-            #content::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
-            #content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 3px; }
-            #content::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+            #content::-webkit-scrollbar-track { background: rgba(197, 200, 198, 0.08); border-radius: 3px; }
+            #content::-webkit-scrollbar-thumb { background: rgba(197, 200, 198, 0.25); border-radius: 3px; }
+            #content::-webkit-scrollbar-thumb:hover { background: rgba(197, 200, 198, 0.4); }
             p { margin: 0 0 8px 0; }
             h1, h2, h3, h4, h5, h6 { margin: 8px 0 4px 0; font-weight: 600; line-height: 1.3; }
             h1 { font-size: 18px; }
@@ -46,12 +47,14 @@ func generateHTMLPage(markdown: String) -> String {
             code {
                 font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
                 font-size: 13px;
-                background: rgba(255, 255, 255, 0.15);
+                /* Ghostty white tint */
+                background: rgba(197, 200, 198, 0.12);
                 padding: 2px 5px;
                 border-radius: 3px;
             }
             pre {
-                background: rgba(30, 30, 30, 0.9);
+                /* Ghostty black #1D1F21 */
+                background: rgba(29, 31, 33, 0.95);
                 padding: 10px;
                 border-radius: 6px;
                 overflow-x: auto;
@@ -61,30 +64,31 @@ func generateHTMLPage(markdown: String) -> String {
             .hljs { background: transparent !important; }
             strong, b { font-weight: 700; }
             em, i { font-style: italic; }
-            a { color: #5EB5F7; text-decoration: none; }
+            /* Ghostty blue #81A2BE */
+            a { color: #81A2BE; text-decoration: none; }
             ul, ol { margin: 6px 0; padding-left: 20px; }
             li { margin: 2px 0; }
             table { border-collapse: collapse; margin: 6px 0; font-size: 14px; }
             th, td {
-                border: 1px solid rgba(255, 255, 255, 0.15);
+                border: 1px solid rgba(197, 200, 198, 0.12);
                 padding: 6px 10px;
                 text-align: left;
                 transition: background 0.15s ease;
             }
             th {
-                background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+                background: linear-gradient(180deg, rgba(197, 200, 198, 0.1) 0%, rgba(197, 200, 198, 0.04) 100%);
                 font-weight: 600;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                border-bottom: 1px solid rgba(197, 200, 198, 0.15);
             }
-            tr:nth-child(even) td { background: rgba(255, 255, 255, 0.03); }
-            tr:hover td { background: rgba(255, 255, 255, 0.1); }
+            tr:nth-child(even) td { background: rgba(197, 200, 198, 0.03); }
+            tr:hover td { background: rgba(197, 200, 198, 0.08); }
             blockquote {
-                border-left: 3px solid rgba(255, 255, 255, 0.3);
+                border-left: 3px solid rgba(197, 200, 198, 0.25);
                 padding-left: 12px;
                 margin: 6px 0;
-                color: rgba(255, 255, 255, 0.85);
+                color: rgba(197, 200, 198, 0.8);
             }
-            hr { border: none; border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 8px 0; }
+            hr { border: none; border-top: 1px solid rgba(197, 200, 198, 0.15); margin: 8px 0; }
         </style>
     </head>
     <body>
