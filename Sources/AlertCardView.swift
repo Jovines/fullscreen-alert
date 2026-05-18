@@ -19,9 +19,43 @@ class AlertCardView: NSView, WKNavigationDelegate {
     private var isCardReady = false
     private var mouseMonitor: Any?
     private var shouldTrackMouse = true
+    private var acceptsPointerEvents = true
     private var protectedUntil: Date?  // 保护期结束时间，nil 表示无保护期
     private var isMouseInside = false
     private var isBorderHighlighted = false
+
+    func setAcceptsPointerEvents(_ accepts: Bool) {
+        guard acceptsPointerEvents != accepts else { return }
+
+        acceptsPointerEvents = accepts
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard acceptsPointerEvents else { return nil }
+        return super.hitTest(point)
+    }
+
+    func containsScreenPoint(_ point: NSPoint) -> Bool {
+        return convertToScreen(frame).contains(point)
+    }
+
+    @discardableResult
+    func forwardScrollWheelToWebView(_ event: NSEvent) -> Bool {
+        guard let webView = webView else { return false }
+
+        let multiplier: CGFloat = event.hasPreciseScrollingDeltas ? 1 : 40
+        let scrollTopDelta = -event.scrollingDeltaY * multiplier
+
+        webView.evaluateJavaScript("""
+            (function() {
+                var el = document.getElementById('content');
+                if (!el) return false;
+                el.scrollTop += \(scrollTopDelta);
+                return true;
+            })();
+        """, completionHandler: nil)
+        return true
+    }
 
     func setShouldTrackMouse(_ track: Bool) {
         print("setShouldTrackMouse: track=\(track), current shouldTrackMouse=\(shouldTrackMouse), mouseMonitor=\(mouseMonitor != nil)")

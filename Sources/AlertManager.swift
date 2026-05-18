@@ -9,6 +9,7 @@ class AlertManager: NSObject {
     private var containerView: NSView?
     private var cards: [String: AlertCardView] = [:]
     private var alertOrder: [String] = []
+    private var scrollMonitor: Any?
 
     private override init() {
         super.init()
@@ -55,6 +56,12 @@ class AlertManager: NSObject {
                 self?.handleCopy()
             }
             return event
+        }
+
+        // 触控板/滚轮事件要强制由最上层通知处理。
+        // WKWebView 有自己的滚动响应链；仅靠 NSView.hitTest / layer.zPosition 在多 WebView 叠放时不可靠。
+        scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            return self?.handleScrollWheel(event) ?? event
         }
     }
 
@@ -131,8 +138,13 @@ class AlertManager: NSObject {
         print("Total cards: \(alertOrder.count)")
 
         // 先禁用所有卡片的鼠标监听
-        for cardId in alertOrder {
+        for (index, cardId) in alertOrder.enumerated() {
             guard let card = cards[cardId] else { continue }
+            let isTop = (index == 0)
+            // AppKit 的事件命中测试按 subview 顺序，而不是 layer.zPosition。
+            // 新通知 addSubview 后虽然视觉上被 zPosition 放到底下，但仍可能先命中它内部的 WKWebView，
+            // 导致滚轮滑动新通知。这里显式只让最上层（最早来的）卡片接收鼠标/滚轮事件。
+            card.setAcceptsPointerEvents(isTop)
             card.setShouldTrackMouse(false)
         }
 
@@ -148,6 +160,11 @@ class AlertManager: NSObject {
 
                 // zPosition：越大的越在上面
                 card.layer?.zPosition = CGFloat(alertOrder.count - index)
+
+                // 同步 NSView 子视图顺序。AppKit 的命中测试按子视图顺序，不按 layer.zPosition。
+                if isTop {
+                    self.containerView?.addSubview(card, positioned: .above, relativeTo: nil)
+                }
 
                 // 清除徽章
                 card.setPendingCount(0)
@@ -184,6 +201,7 @@ class AlertManager: NSObject {
             if let prevId = self.previousTopCardId, prevId != topCardId {
                 topCard.setProtectionDelay(0.2)
             }
+            topCard.setAcceptsPointerEvents(true)
             topCard.setShouldTrackMouse(true)
         }
 
@@ -254,6 +272,27 @@ class AlertManager: NSObject {
                 card.handleCopy()
             }
         }
+    }
+
+    private func handleScrollWheel(_ event: NSEvent) -> NSEvent? {
+        guard alertOrder.count > 1,
+              let topCardId = alertOrder.first,
+              let topCard = cards[topCardId] else {
+            return event
+        }
+
+        let mouseLocation = NSEvent.mouseLocation
+        let isOverAnyCard = alertOrder.contains { cardId in
+            cards[cardId]?.containsScreenPoint(mouseLocation) == true
+        }
+
+        guard isOverAnyCard else { return event }
+
+        if topCard.forwardScrollWheelToWebView(event) {
+            return nil
+        }
+
+        return event
     }
 
     // MARK: - 查询
