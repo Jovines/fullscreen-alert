@@ -19,6 +19,9 @@ echo "Installing to /usr/local/bin..."
 cp .build/release/fullscreen-alert /usr/local/bin/
 chmod +x /usr/local/bin/fullscreen-alert
 
+# 签名（避免 macOS Gatekeeper 阻止）
+codesign --force --sign - /usr/local/bin/fullscreen-alert
+
 # 创建 hook 脚本目录
 mkdir -p ~/.claude/hooks
 

@@ -21,19 +21,35 @@ macOS 全屏提示工具，用于 CLI 工具完成时显示通知。
 
 ## 安装
 
-一键安装（含 Hook 配置）：
+### 方式一：预编译版本（推荐）
+
+从 [Releases](https://github.com/Jovines/fullscreen-alert/releases) 下载最新版本：
 
 ```bash
-bash install.sh
+# 下载并安装
+curl -L https://github.com/Jovines/fullscreen-alert/releases/latest/download/fullscreen-alert -o /usr/local/bin/fullscreen-alert
+chmod +x /usr/local/bin/fullscreen-alert
+
+# 配置 Claude Code Hook
+curl -L https://github.com/Jovines/fullscreen-alert/releases/latest/download/stop-hook.sh -o ~/.claude/hooks/stop-hook.sh
+chmod +x ~/.claude/hooks/stop-hook.sh
 ```
 
-或手动安装：
+然后参考下方 [Claude Code 集成](#claude-code-集成) 配置 `settings.json`。
+
+### 方式二：从源码编译
+
+**前置依赖**：
+- Xcode 命令行工具：`xcode-select --install`
+- [jq](https://stedolan.github.io/jq/)（Hook 脚本依赖）：`brew install jq`
 
 ```bash
-cd ~/Developer/fullscreen-alert
-swift build -c release
-cp .build/release/fullscreen-alert /usr/local/bin/
-codesign --force --sign - /usr/local/bin/fullscreen-alert
+# 克隆仓库
+git clone https://github.com/Jovines/fullscreen-alert.git
+cd fullscreen-alert
+
+# 一键安装（编译 + 配置 Hook）
+bash install.sh
 ```
 
 ## 用法
@@ -110,7 +126,26 @@ fullscreen-alert --close-all
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/<username>/.claude/hooks/stop-hook.sh"
+            "command": "/Users/$(whoami)/.claude/hooks/stop-hook.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+或者直接使用 `$HOME`：
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/stop-hook.sh"
           }
         ]
       }
@@ -200,6 +235,23 @@ fullscreen-alert/
 | `maxTableColumnWidth` | number | `450` | 表格每列最大宽度 |
 
 修改后即时生效，无需重启守护进程。
+
+## 卸载
+
+```bash
+# 删除可执行文件
+rm /usr/local/bin/fullscreen-alert
+
+# 删除 Hook 脚本
+rm ~/.claude/hooks/stop-hook.sh
+
+# 清理配置和临时文件
+rm -rf ~/.config/fullscreen-alert
+rm -f /tmp/fullscreen-alert.sock /tmp/fullscreen-alert.pid
+rm -f /tmp/claude-hook-debug.json /tmp/alert-message-debug.txt
+
+# 从 settings.json 中移除 Stop hook 配置
+```
 
 ### 修改布局常量
 
