@@ -15,9 +15,9 @@ func generateHTMLPage(markdown: String) -> String {
     <html>
     <head>
         <meta charset="UTF-8">
-        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
+        <script>\(Assets.markedJS)</script>
+        <script>\(Assets.highlightJS)</script>
+        <style>\(Assets.highlightCSS)</style>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             html, body { margin: 0; padding: 0; }
@@ -59,6 +59,19 @@ func generateHTMLPage(markdown: String) -> String {
                 border-radius: 6px;
                 overflow-x: auto;
                 margin: 6px 0;
+                position: relative;
+            }
+            .code-lang {
+                position: absolute;
+                top: 5px;
+                left: 10px;
+                font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+                font-size: 11px;
+                font-weight: 500;
+                /* Ghostty blue #81A2BE */
+                color: rgba(129, 162, 190, 0.55);
+                pointer-events: none;
+                user-select: none;
             }
             pre code { background: none; padding: 0; }
             .hljs { background: transparent !important; }
@@ -74,6 +87,8 @@ func generateHTMLPage(markdown: String) -> String {
                 padding: 6px 10px;
                 text-align: left;
                 transition: background 0.15s ease;
+                overflow-wrap: break-word;
+                word-break: break-word;
             }
             th {
                 background: linear-gradient(180deg, rgba(197, 200, 198, 0.1) 0%, rgba(197, 200, 198, 0.04) 100%);
@@ -101,6 +116,24 @@ func generateHTMLPage(markdown: String) -> String {
             // 代码高亮
             document.querySelectorAll('pre code').forEach(function(block) {
                 hljs.highlightElement(block);
+            });
+
+            // 代码块语言标签
+            document.querySelectorAll('pre code').forEach(function(block) {
+                var lang = null;
+                block.className.split(' ').forEach(function(cls) {
+                    if (cls.startsWith('language-')) {
+                        lang = cls.replace('language-', '');
+                    }
+                });
+                if (lang) {
+                    var pre = block.parentElement;
+                    pre.style.paddingTop = '22px';
+                    var label = document.createElement('span');
+                    label.className = 'code-lang';
+                    label.textContent = lang;
+                    pre.appendChild(label);
+                }
             });
 
             // 表格列宽调整
@@ -135,7 +168,7 @@ func generateHTMLPage(markdown: String) -> String {
                                 if (textWidth > maxContentWidth) maxContentWidth = textWidth;
                             }
                         }
-                        colWidths[col] = Math.min(maxContentWidth + 20, maxColWidth);
+                        colWidths[col] = Math.min(maxContentWidth + 24, maxColWidth);
                     }
 
                     document.body.removeChild(measureSpan);
@@ -147,8 +180,6 @@ func generateHTMLPage(markdown: String) -> String {
                         var cells = rows[r].querySelectorAll('td, th');
                         for (var col = 0; col < cells.length; col++) {
                             cells[col].style.width = colWidths[col] + 'px';
-                            cells[col].style.wordWrap = 'break-word';
-                            cells[col].style.overflowWrap = 'break-word';
                         }
                     }
 
