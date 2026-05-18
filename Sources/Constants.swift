@@ -6,7 +6,7 @@ struct Constants {
     static let pidFilePath = "/tmp/fullscreen-alert.pid"
 
     // 守护进程空闲超时（秒）
-    static let daemonIdleTimeout: TimeInterval = 300  // 5分钟
+    static let daemonIdleTimeout: TimeInterval = 43200  // 12小时
 
     // 布局常量
     static let screenMargin: CGFloat = 50

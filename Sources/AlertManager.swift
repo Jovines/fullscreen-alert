@@ -32,7 +32,6 @@ class AlertManager: NSObject {
         window.level = .screenSaver
         window.backgroundColor = NSColor.black.withAlphaComponent(0.5)
         window.isOpaque = false
-        window.ignoresMouseEvents = false
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.alphaValue = 0
 
@@ -40,6 +39,9 @@ class AlertManager: NSObject {
         containerView.wantsLayer = true
         window.contentView = containerView
         window.makeKeyAndOrderFront(nil)
+
+        // 卡片 onReady 之前先放行全屏鼠标事件，避免在 WebView 加载/高度调整期间锁住用户操作
+        window.ignoresMouseEvents = true
 
         self.window = window
         self.containerView = containerView
@@ -78,9 +80,6 @@ class AlertManager: NSObject {
         ensureWindow()
         print("Window ensured: \(window != nil)")
 
-        // 确保窗口接收鼠标事件
-        window?.ignoresMouseEvents = false
-
         let alertInfo = AlertInfo(request: request)
         let config = Config.load()
         let screenMargin = config.screenMargin ?? Constants.screenMargin
@@ -112,6 +111,8 @@ class AlertManager: NSObject {
 
         card.onReady = { [weak self] in
             print("Card onReady")
+            // 卡片准备好后再开放鼠标事件，避免加载/高度调整期间锁住整屏操作
+            self?.window?.ignoresMouseEvents = false
             self?.window?.animator().alphaValue = 1
         }
         card.onClose = { [weak self] in
