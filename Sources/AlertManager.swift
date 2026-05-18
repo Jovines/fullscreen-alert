@@ -98,9 +98,12 @@ class AlertManager: NSObject {
         print("NSScreen.main: \(NSScreen.main != nil)")
         if let screen = NSScreen.main {
             print("Screen frame: \(screen.frame)")
+            // 使用 visibleFrame 排除顶部菜单栏/刘海区域，避免被遮挡
+            let visibleFrame = screen.visibleFrame
+            let visibleMinY = visibleFrame.origin.y - screen.frame.origin.y
             var cardFrame = card.frame
             cardFrame.origin.x = (screen.frame.width - cardFrame.width) / 2
-            cardFrame.origin.y = (screen.frame.height - cardFrame.height) / 2
+            cardFrame.origin.y = visibleMinY + (visibleFrame.height - cardFrame.height) / 2
             card.frame = cardFrame
             print("Card centered at: (\(cardFrame.origin.x), \(cardFrame.origin.y))")
         } else {
@@ -131,8 +134,11 @@ class AlertManager: NSObject {
 
     private func relayoutCards() {
         guard let screen = NSScreen.main else { return }
+        // 使用 visibleFrame 排除顶部菜单栏/刘海区域，避免被遮挡
+        let visibleFrame = screen.visibleFrame
+        let visibleMinY = visibleFrame.origin.y - screen.frame.origin.y
         let screenCenterX = screen.frame.width / 2
-        let screenCenterY = screen.frame.height / 2
+        let screenCenterY = visibleMinY + visibleFrame.height / 2
 
         print("=== relayoutCards ===")
         print("Total cards: \(alertOrder.count)")
