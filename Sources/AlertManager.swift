@@ -17,10 +17,14 @@ class AlertManager: NSObject {
 
     // MARK: - 窗口管理
 
+    private var activeScreen: NSScreen? {
+        return window?.screen ?? NSScreen.screens.first
+    }
+
     private func ensureWindow() {
         guard window == nil else { return }
 
-        guard let screen = NSScreen.main else { return }
+        guard let screen = NSScreen.screens.first else { return }
         let window = NSWindow(
             contentRect: screen.frame,
             styleMask: [.borderless],
@@ -85,7 +89,7 @@ class AlertManager: NSObject {
         let screenMargin = config.screenMargin ?? Constants.screenMargin
         let maxCardWidth = config.cardWidth ?? Constants.cardWidth
         let cardWidth = min(
-            (NSScreen.main?.frame.width ?? 1000) - screenMargin * 2,
+            (activeScreen?.frame.width ?? 1000) - screenMargin * 2,
             maxCardWidth
         )
         print("Card width: \(cardWidth)")
@@ -94,8 +98,7 @@ class AlertManager: NSObject {
         print("Card created: \(card.frame)")
 
         // 设置卡片居中位置
-        print("NSScreen.main: \(NSScreen.main != nil)")
-        if let screen = NSScreen.main {
+        if let screen = activeScreen {
             print("Screen frame: \(screen.frame)")
             // 使用 visibleFrame 排除顶部菜单栏/刘海区域，避免被遮挡
             let visibleFrame = screen.visibleFrame
@@ -106,7 +109,7 @@ class AlertManager: NSObject {
             card.frame = cardFrame
             print("Card centered at: (\(cardFrame.origin.x), \(cardFrame.origin.y))")
         } else {
-            print("ERROR: NSScreen.main is nil")
+            print("ERROR: no active screen")
         }
 
         card.onReady = { [weak self] in
@@ -134,7 +137,7 @@ class AlertManager: NSObject {
     private var previousTopCardId: String?  // 记录之前的顶层卡片
 
     private func relayoutCards() {
-        guard let screen = NSScreen.main else { return }
+        guard let screen = activeScreen else { return }
         // 使用 visibleFrame 排除顶部菜单栏/刘海区域，避免被遮挡
         let visibleFrame = screen.visibleFrame
         let visibleMinY = visibleFrame.origin.y - screen.frame.origin.y

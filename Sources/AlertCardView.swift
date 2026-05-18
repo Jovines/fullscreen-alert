@@ -174,7 +174,7 @@ class AlertCardView: NSView, WKNavigationDelegate {
         self.metaHeight = CGFloat(parsed.metaLines.count) * Constants.metaLineHeight
 
         // 计算响应高度（屏幕高度的 75%，但不小于 200）
-        if let screen = NSScreen.main {
+        if let screen = NSScreen.screens.first {
             self.maxResponseHeight = max(Constants.minResponseHeight, min(screen.frame.height * 0.75, Constants.maxResponseHeight))
         }
 
