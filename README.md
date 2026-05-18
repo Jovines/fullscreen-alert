@@ -181,6 +181,9 @@ fullscreen-alert/
 │   ├── Constants.swift      # 常量定义
 │   ├── Config.swift         # 运行时配置文件读写
 │   └── HTMLGenerator.swift  # HTML 生成
+├── hooks/
+│   └── claude/
+│       └── stop-hook.sh     # Claude Code Stop Hook
 ├── Package.swift            # Swift 包配置
 ├── DESIGN.md                # 设计规范与色彩体系
 ├── install.sh               # 一键安装脚本

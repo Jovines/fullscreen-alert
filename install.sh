@@ -25,8 +25,8 @@ codesign --force --sign - /usr/local/bin/fullscreen-alert
 # 创建 hook 脚本目录
 mkdir -p ~/.claude/hooks
 
-# 从仓库复制 hook 脚本
-cp "$SCRIPT_DIR/stop-hook.sh" ~/.claude/hooks/stop-hook.sh
+# 从仓库复制 hook 脚本（按 agent 分目录）
+cp "$SCRIPT_DIR/hooks/claude/stop-hook.sh" ~/.claude/hooks/stop-hook.sh
 chmod +x ~/.claude/hooks/stop-hook.sh
 
 # 更新 settings.json
