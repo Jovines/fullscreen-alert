@@ -10,6 +10,13 @@ struct Config: Codable {
     var daemonIdleTimeout: TimeInterval?
     var maxTableColumnWidth: CGFloat?
 
+    // ===== Compact（小卡片）配置 =====
+    var defaultLevel: AlertLevel?
+    var compactCardWidth: CGFloat?
+    var compactHorizontalSpacing: CGFloat?
+    var compactPromptMaxLines: Int?
+    var compactTopMargin: CGFloat?
+
     static let configDir = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".config/fullscreen-alert")
     static let configPath = configDir.appendingPathComponent("config.json")

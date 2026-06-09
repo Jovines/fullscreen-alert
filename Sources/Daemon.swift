@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 // MARK: - 守护进程
 
@@ -29,6 +30,11 @@ class Daemon {
 
         // 设置空闲超时
         resetIdleTimer()
+
+        // 关键性能优化：daemon 启动后立即预热 WebView
+        // 把 WKWebView 进程冷启动 + marked.js/highlight.js JIT 编译开销藏到用户感知不到的地方
+        // 用户首次触发 full 卡时，process pool 已是热的
+        WebViewPool.shared.prewarm()
     }
 
     func stop() {
@@ -171,7 +177,44 @@ class Daemon {
             let ids = alertManager.listAlerts()
             response = DaemonResponse(success: true, message: nil, alertIds: ids)
         case .ping:
-            response = DaemonResponse(success: true, message: "Pong", alertIds: nil)
+            response = DaemonResponse(success: true, message: "Pong", alertIds: nil, version: Constants.version)
+        case .dump:
+            let path = packet.alertId ?? "/tmp/fullscreen-alert-dump.png"
+            let runDump: () -> Void = {
+                let ok = self.alertManager.dumpWindowSnapshot(to: path)
+                let layout = self.alertManager.debugDescribeLayout()
+                print(layout)
+                fflush(stdout)
+                response = DaemonResponse(success: ok, message: ok ? "Dumped to \(path)\n\(layout)" : "Dump failed", alertIds: nil)
+            }
+            if Thread.isMainThread {
+                runDump()
+            } else {
+                DispatchQueue.main.sync(execute: runDump)
+            }
+        case .upgrade:
+            if let id = packet.alertId {
+                let ok = self.alertManager.upgradeAlertById(id)
+                response = DaemonResponse(success: ok, message: ok ? "Upgraded \(id)" : "Upgrade failed (id not found or not compact)", alertIds: nil)
+            } else {
+                response = DaemonResponse(success: false, message: "Missing alertId", alertIds: nil)
+            }
+        case .simulateHover:
+            let x = packet.mouseX ?? 0
+            let y = packet.mouseY ?? 0
+            let runSim: () -> Void = {
+                let layout = self.alertManager.simulateMouseAt(NSPoint(x: x, y: y))
+                response = DaemonResponse(success: true, message: layout, alertIds: nil)
+            }
+            if Thread.isMainThread { runSim() } else { DispatchQueue.main.sync(execute: runSim) }
+        case .simulateRightClick:
+            let x = packet.mouseX ?? 0
+            let y = packet.mouseY ?? 0
+            let runSim: () -> Void = {
+                let info = self.alertManager.simulateRightClickAt(NSPoint(x: x, y: y))
+                response = DaemonResponse(success: true, message: info, alertIds: nil)
+            }
+            if Thread.isMainThread { runSim() } else { DispatchQueue.main.sync(execute: runSim) }
         }
 
         sendResponse(success: response.success, message: response.message, alertIds: response.alertIds, to: clientSocket)

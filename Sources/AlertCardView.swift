@@ -4,16 +4,21 @@ import WebKit
 // MARK: - 单个通知卡片视图
 
 class AlertCardView: NSView, WKNavigationDelegate {
+    let level: AlertLevel
     private let alertInfo: AlertInfo
+    var alertRequest: AlertRequest { return alertInfo.request }
     private var webView: WKWebView?
     private var promptHeight: CGFloat = 0
     private var metaHeight: CGFloat = 0
     private var maxResponseHeight: CGFloat = Constants.maxResponseHeight
     private var hasPlayedSound = false
     private var badgeView: NSView?  // 待处理数量徽章
+    private var indexBadgeView: NSView?  // compact 模式左上角编号徽章
+    private var indexBadgeLabel: NSTextField?
 
     var onReady: (() -> Void)?
     var onClose: (() -> Void)?
+    var onUpgrade: (() -> Void)?  // compact -> full
 
     // 鼠标追踪
     private var isCardReady = false
@@ -23,6 +28,7 @@ class AlertCardView: NSView, WKNavigationDelegate {
     private var protectedUntil: Date?  // 保护期结束时间，nil 表示无保护期
     private var isMouseInside = false
     private var isBorderHighlighted = false
+    private var isUpgrading = false      // compact 升级途中，禁止 hover-out 关闭
 
     func setAcceptsPointerEvents(_ accepts: Bool) {
         guard acceptsPointerEvents != accepts else { return }
@@ -140,10 +146,52 @@ class AlertCardView: NSView, WKNavigationDelegate {
         }
     }
 
-    init(alertInfo: AlertInfo, maxWidth: CGFloat) {
+    init(alertInfo: AlertInfo, maxWidth: CGFloat, level: AlertLevel = .full) {
+        self.level = level
         self.alertInfo = alertInfo
         let parsed = alertInfo.parsedMessage
 
+        if level == .compact {
+            // ===== Compact 模式：只渲染 title + prompt =====
+            let cardWidth = Constants.compactCardWidth
+            let contentWidth = cardWidth - Constants.compactCardPadding * 2
+
+            // 标题高度固定
+            // prompt 高度按最多 N 行计算
+            var promptHeight: CGFloat = 0
+            if let prompt = parsed.prompt, !prompt.isEmpty {
+                let paragraphStyle = NSMutableParagraphStyle()
+                paragraphStyle.alignment = .left
+                paragraphStyle.lineBreakMode = .byTruncatingTail
+                let attrs: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: 12, weight: .regular),
+                    .paragraphStyle: paragraphStyle
+                ]
+                let attrString = NSAttributedString(string: prompt, attributes: attrs)
+                let rect = attrString.boundingRect(
+                    with: NSSize(width: contentWidth, height: CGFloat.greatestFiniteMagnitude),
+                    options: [.usesLineFragmentOrigin]
+                )
+                let lineHeight: CGFloat = 16
+                let maxLines = Config.load().compactPromptMaxLines ?? Constants.compactPromptMaxLines
+                let maxHeight = lineHeight * CGFloat(maxLines)
+                promptHeight = min(ceil(rect.height), maxHeight)
+            }
+            self.promptHeight = promptHeight
+            self.metaHeight = 0
+
+            var cardHeight = Constants.compactCardPadding * 2 + Constants.compactTitleHeight
+            if promptHeight > 0 {
+                cardHeight += Constants.compactInnerSpacing + promptHeight
+            }
+
+            let frame = NSRect(x: 0, y: 0, width: cardWidth, height: cardHeight)
+            super.init(frame: frame)
+            setupCompactViews()
+            return
+        }
+
+        // ===== Full 模式（原逻辑） =====
         // 计算高度
         let hasResponse = parsed.response != nil && !parsed.response!.isEmpty
         let hasPrompt = parsed.prompt != nil && !parsed.prompt!.isEmpty
@@ -193,6 +241,189 @@ class AlertCardView: NSView, WKNavigationDelegate {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Compact 视图
+
+    private func setupCompactViews() {
+        wantsLayer = true
+        alphaValue = 0
+        layer?.transform = CATransform3DMakeScale(0.96, 0.96, 1)
+
+        let cornerRadius: CGFloat = 10
+
+        // 毛玻璃背景
+        let bgView = NSVisualEffectView(frame: bounds)
+        bgView.blendingMode = .behindWindow
+        bgView.material = .dark
+        bgView.state = .active
+        bgView.wantsLayer = true
+        bgView.layer?.cornerRadius = cornerRadius
+        addSubview(bgView)
+
+        // 暗色蒙层
+        let darkOverlay = NSView(frame: bounds)
+        darkOverlay.wantsLayer = true
+        darkOverlay.layer?.backgroundColor = NSColor(red: 0.114, green: 0.122, blue: 0.129, alpha: 0.75).cgColor
+        darkOverlay.layer?.cornerRadius = cornerRadius
+        addSubview(darkOverlay)
+
+        layer?.backgroundColor = NSColor(red: 0.114, green: 0.122, blue: 0.129, alpha: 0.95).cgColor
+        layer?.cornerRadius = cornerRadius
+        layer?.borderWidth = 1
+        layer?.borderColor = NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.1).cgColor
+        layer?.shadowColor = NSColor.black.withAlphaComponent(0.4).cgColor
+        layer?.shadowOffset = CGSize(width: 0, height: 4)
+        layer?.shadowRadius = 12
+        layer?.shadowOpacity = 1
+
+        let cardWidth = bounds.width
+        let padding = Constants.compactCardPadding
+        var currentY = bounds.height - padding - Constants.compactTitleHeight
+
+        // 标题（左对齐，留出徽章空间）
+        let titleField = NSTextField(labelWithString: alertInfo.request.title)
+        titleField.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        titleField.textColor = NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.85)
+        titleField.alignment = .left
+        titleField.lineBreakMode = .byTruncatingTail
+        titleField.maximumNumberOfLines = 1
+        let titleX = padding + Constants.compactBadgeSize + 8
+        titleField.frame = NSRect(
+            x: titleX,
+            y: currentY,
+            width: cardWidth - titleX - padding,
+            height: Constants.compactTitleHeight
+        )
+        addSubview(titleField)
+
+        // 左上角编号徽章
+        let badgeSize = Constants.compactBadgeSize
+        let badge = NSView(frame: NSRect(
+            x: padding,
+            y: currentY + (Constants.compactTitleHeight - badgeSize) / 2,
+            width: badgeSize,
+            height: badgeSize
+        ))
+        badge.wantsLayer = true
+        // Ghostty blue 半透明背景
+        badge.layer?.backgroundColor = NSColor(red: 0.506, green: 0.635, blue: 0.745, alpha: 0.85).cgColor
+        badge.layer?.cornerRadius = badgeSize / 2
+
+        let badgeLabel = NSTextField(labelWithString: "1")
+        badgeLabel.font = NSFont.systemFont(ofSize: 11, weight: .bold)
+        badgeLabel.textColor = .white
+        badgeLabel.alignment = .center
+        badgeLabel.frame = NSRect(x: 0, y: 0, width: badgeSize, height: badgeSize)
+        // 垂直居中（NSTextField 文字垂直居中需要靠 baseline 调整）
+        badgeLabel.frame = NSRect(x: 0, y: -1, width: badgeSize, height: badgeSize)
+        badge.addSubview(badgeLabel)
+
+        addSubview(badge)
+        self.indexBadgeView = badge
+        self.indexBadgeLabel = badgeLabel
+
+        // Prompt
+        let parsed = alertInfo.parsedMessage
+        if let prompt = parsed.prompt, promptHeight > 0 {
+            currentY -= Constants.compactInnerSpacing + promptHeight
+
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .left
+            paragraphStyle.lineBreakMode = .byTruncatingTail
+            paragraphStyle.lineSpacing = 1
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 12, weight: .regular),
+                .foregroundColor: NSColor(red: 0.773, green: 0.784, blue: 0.776, alpha: 0.7),
+                .paragraphStyle: paragraphStyle
+            ]
+            let attrString = NSAttributedString(string: prompt, attributes: attrs)
+
+            let promptField = NSTextField(frame: NSRect(
+                x: padding,
+                y: currentY,
+                width: cardWidth - padding * 2,
+                height: promptHeight
+            ))
+            promptField.isBezeled = false
+            promptField.drawsBackground = false
+            promptField.isEditable = false
+            promptField.isSelectable = false
+            promptField.attributedStringValue = attrString
+            promptField.cell?.wraps = true
+            promptField.cell?.isScrollable = false
+            promptField.lineBreakMode = .byTruncatingTail
+            promptField.maximumNumberOfLines = Config.load().compactPromptMaxLines ?? Constants.compactPromptMaxLines
+            addSubview(promptField)
+        }
+
+        // compact 模式没有 WebView，延迟一帧 fade-in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) { [weak self] in
+            self?.animateIn()
+        }
+    }
+
+    /// 由 AlertManager 在全局鼠标移动监听里调用 — compact 模式专用
+    /// 不依赖 localMonitor（窗口可能正穿透），直接根据屏幕坐标判定
+    func compactHandleGlobalMouseMoved() {
+        compactHandleMouseAt(NSEvent.mouseLocation)
+    }
+
+    /// 测试用：以指定屏幕坐标驱动 hover 检测
+    func compactHandleMouseAt(_ mouseLoc: NSPoint) {
+        guard level == .compact, isCardReady else { return }
+        if isUpgrading { return }
+
+        let cardRectInScreen = convertToScreen(frame)
+        let isInside = cardRectInScreen.contains(mouseLoc)
+
+        if isInside {
+            if !isMouseInside {
+                isMouseInside = true
+                updateBorderHighlight(active: true)
+            }
+        } else {
+            if isMouseInside {
+                isMouseInside = false
+                if isBorderHighlighted {
+                    updateBorderHighlight(active: false)
+                    closeCard()
+                }
+            }
+        }
+    }
+
+    /// 设置左上角编号（1-based），仅 compact 模式生效
+    func setIndexBadge(_ index: Int) {
+        guard level == .compact else { return }
+        indexBadgeLabel?.stringValue = "\(index)"
+    }
+
+    /// 调试用：返回当前 hover/highlight 状态
+    var debugHoverState: String {
+        return "isMouseInside=\(isMouseInside) isBorderHighlighted=\(isBorderHighlighted) isUpgrading=\(isUpgrading) shouldTrackMouse=\(shouldTrackMouse) isCardReady=\(isCardReady)"
+    }
+
+    /// 由外部触发的升级路径调用，标记为升级中，避免 hover-out 关闭
+    func markUpgrading() {
+        isUpgrading = true
+        shouldTrackMouse = false
+    }
+
+    /// 左键点击 compact 卡片 -> 升级为 full
+    override func mouseDown(with event: NSEvent) {
+        if level == .compact {
+            isUpgrading = true
+            // 移除鼠标监听，避免随后 hover-out 把这张卡误关
+            if let monitor = mouseMonitor {
+                NSEvent.removeMonitor(monitor)
+                mouseMonitor = nil
+            }
+            shouldTrackMouse = false
+            onUpgrade?()
+            return
+        }
+        super.mouseDown(with: event)
     }
 
     private func setupViews() {
@@ -295,13 +526,12 @@ class AlertCardView: NSView, WKNavigationDelegate {
             currentY -= Constants.innerSpacing + maxResponseHeight
 
             let webWidth = cardWidth - Constants.cardPadding * 2
-            let webConfig = WKWebViewConfiguration()
-            let webView = WKWebView(frame: NSRect(
+            let webView = WebViewPool.shared.makeWebView(frame: NSRect(
                 x: Constants.cardPadding,
                 y: currentY,
                 width: webWidth,
                 height: maxResponseHeight
-            ), configuration: webConfig)
+            ))
             webView.setValue(false, forKey: "drawsBackground")
             webView.navigationDelegate = self
 
@@ -348,9 +578,9 @@ class AlertCardView: NSView, WKNavigationDelegate {
         )
         addSubview(hintField)
 
-        // 如果没有 WebView，延迟显示
+        // 如果没有 WebView，立即显示；有 WebView 等 didFinish 触发 animateIn
         if webView == nil {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            DispatchQueue.main.async { [weak self] in
                 self?.animateIn()
             }
         }
@@ -467,6 +697,9 @@ class AlertCardView: NSView, WKNavigationDelegate {
     private func playSound() {
         guard !hasPlayedSound else { return }
         hasPlayedSound = true
+
+        // compact 模式静默
+        if level == .compact { return }
 
         guard let soundName = alertInfo.request.sound else { return }
         let lowercased = soundName.lowercased()
